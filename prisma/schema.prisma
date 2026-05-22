@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Profile {
+  id                    String    @id @db.Uuid
+  fullName              String    @map("full_name")
+  email                 String    @unique
+  phoneNo               String?   @map("phone_no")
+  userAddress           String?   @map("user_address")
+  role                  String    @default("customer")
+  languagePreference    String    @default("en") @map("language_preference")
+  themePreference       String    @default("light") @map("theme_preference")
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  cartItems             CartItem[]
+  orders                Order[]
+
+  @@map("profiles")
+}
+
+model Product {
+  id            BigInt      @id @default(autoincrement())
+  productName   String      @map("product_name")
+  slug          String?
+  inStock       Int         @default(0) @map("in_stock")
+  price         Decimal     @db.Decimal(10, 2)
+  description   String?
+  imageUrl      String?     @map("image_url")
+  type          String
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+
+  @@map("products")
+}
+
+model CartItem {
+  id        BigInt   @id @default(autoincrement())
+  userId    String   @map("user_id") @db.Uuid
+  productId BigInt   @map("product_id")
+  quantity  Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("cart_items")
+}
+
+model Order {
+  id              BigInt      @id @default(autoincrement())
+  userId          String      @map("user_id") @db.Uuid
+  totalPrice      Decimal     @map("total_price") @db.Decimal(12, 2)
+  paymentMethod   String      @map("payment_method")
+  confirmPayment  Boolean     @default(false) @map("confirm_payment")
+  orderStatus     String      @default("paid") @map("order_status")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user            Profile     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems      OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            BigInt   @id @default(autoincrement())
+  orderId       BigInt   @map("order_id")
+  productId     BigInt   @map("product_id")
+  quantity      Int
+  productPrice  Decimal  @map("product_price") @db.Decimal(10, 2)
+
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@map("order_items")
+}
