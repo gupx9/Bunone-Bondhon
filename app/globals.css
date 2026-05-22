@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-cream text-brown font-body antialiased;
+  background-image: linear-gradient(180deg, rgba(255, 248, 239, 0.94), rgba(245, 235, 215, 0.96));
+}
+
+::selection {
+  background: rgba(217, 165, 32, 0.24);
+  color: #3b2416;
+}
+
+.container-page {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+.surface {
+  @apply rounded-3xl border border-line bg-ivory/90 shadow-bloom backdrop-blur-sm;
+}
+
+.button-primary {
+  @apply inline-flex items-center justify-center rounded-full bg-gold px-5 py-3 text-sm font-semibold text-brown transition duration-300 hover:-translate-y-0.5 hover:bg-terracotta hover:text-ivory hover:shadow-glow;
+}
+
+.button-secondary {
+  @apply inline-flex items-center justify-center rounded-full border border-line bg-ivory px-5 py-3 text-sm font-semibold text-brown transition duration-300 hover:-translate-y-0.5 hover:border-gold hover:text-maroon;
+}
+
+.section-kicker {
+  @apply text-sm font-semibold uppercase tracking-[0.28em] text-maroon/70;
+}
+
+.hero-title {
+  @apply font-display text-4xl leading-tight text-brown sm:text-5xl lg:text-7xl;
+}
+
+.card {
+  @apply overflow-hidden rounded-3xl border border-line bg-ivory/95 shadow-bloom transition duration-300 hover:-translate-y-1 hover:shadow-glow;
+}
