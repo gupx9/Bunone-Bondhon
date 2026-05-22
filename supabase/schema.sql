@@ -69,6 +69,7 @@ alter table public.order_items enable row level security;
 create policy "Public products are readable" on public.products for select using (true);
 
 create policy "Users can read their profile" on public.profiles for select using (auth.uid() = id);
+create policy "Users can create their profile" on public.profiles for insert with check (auth.uid() = id);
 create policy "Users can update their profile" on public.profiles for update using (auth.uid() = id);
 
 create policy "Users can manage their cart" on public.cart_items
