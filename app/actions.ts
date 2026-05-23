@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { mkdir, writeFile } from 'fs/promises';
+import path from 'path';
 import { prisma } from '@/lib/prisma';
 import { getSession, sessionCookieName, type LocalSession } from '@/lib/session';
 
@@ -28,12 +30,22 @@ async function requireAdmin() {
   return { user, profile };
 }
 
+async function saveProductImage(file: File) {
+  const fileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+  const uniqueName = `${Date.now()}-${fileName}`;
+  const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+
+  await mkdir(uploadsDir, { recursive: true });
+  await writeFile(path.join(uploadsDir, uniqueName), Buffer.from(await file.arrayBuffer()));
+
+  return `/uploads/${uniqueName}`;
+}
+
 export async function createLocalSession(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim();
   const phoneNo = String(formData.get('phoneNo') ?? '').trim();
   const userAddress = String(formData.get('userAddress') ?? '').trim();
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
-  const password = String(formData.get('password') ?? '');
   const existing = getSession();
 
   let sessionId = existing?.id ?? crypto.randomUUID();
@@ -259,7 +271,14 @@ export async function updateProduct(formData: FormData) {
   const price = new Prisma.Decimal(String(formData.get('price') ?? '0'));
   const description = String(formData.get('description') ?? '');
   const imageUrl = String(formData.get('imageUrl') ?? '');
+  const uploadedImage = formData.get('imageFile');
   const type = String(formData.get('type') ?? 'other');
+
+  let nextImageUrl = imageUrl;
+
+  if (uploadedImage instanceof File && uploadedImage.size > 0) {
+    nextImageUrl = await saveProductImage(uploadedImage);
+  }
 
   await prisma.product.update({
     where: { id: productId },
@@ -268,12 +287,49 @@ export async function updateProduct(formData: FormData) {
       inStock,
       price,
       description,
-      imageUrl,
+      imageUrl: nextImageUrl || null,
       type
     }
   });
 
   revalidatePath('/admin');
+  revalidatePath('/shop');
+}
+
+export async function createProduct(formData: FormData) {
+  await requireAdmin();
+
+  const productName = String(formData.get('productName') ?? '').trim();
+  const inStock = Number(formData.get('inStock') ?? 0);
+  const price = new Prisma.Decimal(String(formData.get('price') ?? '0'));
+  const description = String(formData.get('description') ?? '').trim();
+  const imageUrl = String(formData.get('imageUrl') ?? '').trim();
+  const uploadedImage = formData.get('imageFile');
+  const type = String(formData.get('type') ?? 'other').trim() || 'other';
+
+  if (!productName) {
+    redirect('/admin');
+  }
+
+  let nextImageUrl = imageUrl;
+
+  if (uploadedImage instanceof File && uploadedImage.size > 0) {
+    nextImageUrl = await saveProductImage(uploadedImage);
+  }
+
+  await prisma.product.create({
+    data: {
+      productName,
+      inStock,
+      price,
+      description: description || null,
+      imageUrl: nextImageUrl || null,
+      type
+    }
+  });
+
+  revalidatePath('/admin');
+  revalidatePath('/shop');
 }
 
 export async function updateUserRole(formData: FormData) {

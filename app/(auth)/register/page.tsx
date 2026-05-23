@@ -22,7 +22,7 @@ export default function RegisterPage() {
                 type="email"
                 name="email"
                 placeholder="you@gmail.com"
-                pattern="^[A-Za-z0-9._%+-]+@gmail\.com$"
+                pattern=".+@gmail\.com"
                 required
               />
             </div>
